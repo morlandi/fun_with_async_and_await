@@ -10,6 +10,9 @@ una speciale funzione in grado di sospendere volontariamente la propria esecuzio
 conservando il contesto raggiunto al momento dell'interruzione,
 per poter riprendere successivamente l'attività.
 
+.. contents::
+
+.. sectnum::
 
 generators
 ----------
@@ -363,10 +366,104 @@ cito a titolo d'esempio **urllib2** che spesso e volentieri viene ignorata in
 favore di **requests** da molti programmers.
 
 
-See file `async_server.py`
+See file `async_server.py <./async_server.py>`_
 
 TODO: explain
 
+
+Quando e perchè utilizzare asyncio
+----------------------------------
+
+Il seguente snippets è un "hello world" per HTTP: esegue un'istruzione GET per
+ricevere una pagina HTML remota via HTTP:
+
+.. code:: python
+
+    import requests
+
+    def hello():
+        return requests.get("http://httpbin.org/get")
+
+    print(hello())
+
+La soluzione asincrona per ottenere lo stesso risultato, sfruttando **asyncio**
+e **aiohttp**, è questa:
+
+.. code:: python
+
+    #!/usr/local/bin/python3.5
+    import asyncio
+    from aiohttp import ClientSession
+
+    async def hello(url):
+        async with ClientSession() as session:
+            async with session.get(url) as response:
+                response = await response.read()
+                print(response)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(hello("http://httpbin.org/headers"))
+
+Tanta roba !
+
+Cosa possiamo concludere ?
+
+1) in termine di leggibilità e semplicità del codice, la soluzione asincrona
+   è piuttosto discutibile
+
+2) quanto meno, vorremmo ottenere vantaggi importanti in termine di performances,
+   e nel caso precedente non succede
+
+Uno use case che illustra un caso in cui la soluzione asincrona è giusticata e
+preferibile è il seguente:
+
+.. code:: python
+
+    base_url = "http://localhost:8080/{}"
+    urls = [base_url.format(i) for i in range(5)]
+
+    for url in urls:
+        print(requests.get(url).text)
+
+In questo caso, eseguiamo in sequenza 5 GET consecutivi, e il tempo complessivo
+sarà la somma del tempo richiesto da ciascuna operazione.
+
+Con una soluzione asincrona, i downloads avvengono in parallelo, e il tempo complessivo
+sarà sostanzialmente pari a quello della richiesta più lenta.
+
+.. code:: python
+
+    #!/usr/local/bin/python3.5
+    import asyncio
+    from aiohttp import ClientSession
+
+    async def fetch(url, session):
+        async with session.get(url) as response:
+            return await response.read()
+
+    async def run(r):
+        url = "http://localhost:8080/{}"
+        tasks = []
+
+        # Fetch all responses within one Client session,
+        # keep connection alive for all requests.
+        async with ClientSession() as session:
+            for i in range(r):
+                task = asyncio.ensure_future(fetch(url.format(i), session))
+                tasks.append(task)
+
+            responses = await asyncio.gather(*tasks)
+            # you now have all response bodies in this variable
+            print(responses)
+
+    def print_responses(result):
+        print(result)
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.ensure_future(run(4))
+    loop.run_until_complete(future)
+
+Source: `Making 1 million requests with python-aiohttp <https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html>`_
 
 
 References
@@ -375,13 +472,3 @@ References
 - `Jonas Obrist: Artisanal Async Adventures (PyCon Italy 2019) <https://www.youtube.com/watch?v=dTKntbaoYOc>`_
 - `Making 1 million requests with python-aiohttp <https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html>`_
 - `How the heck does async/await work in Python 3.5? <https://snarky.ca/how-the-heck-does-async-await-work-in-python-3-5/>`_
-
-
-
-
-
-
-
-
-
-
