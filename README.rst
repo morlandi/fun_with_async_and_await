@@ -473,4 +473,5 @@ References
 - `Making 1 million requests with python-aiohttp <https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html>`_
 - `How the heck does async/await work in Python 3.5? <https://snarky.ca/how-the-heck-does-async-await-work-in-python-3-5/>`_
 - `I'm not feeling the async pressure <https://lucumr.pocoo.org/2020/1/1/async-pressure/>`_
+- `Asyncio: Understanding Async / Await in Python <https://www.youtube.com/watch?v=bs9tlDFWWdQ>`_
 
